@@ -1,0 +1,11 @@
+[Unit]
+Description = Apache airflow web
+ 
+[Service]
+ExecStart = /root/.venv/bin/airflow webserver -p 8081
+Restart = always
+Type = simple
+Environment="PATH=/usr/local/spark/bin:/root/.venv/bin:/root/.pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="AIRFLOW_HOME=/root/airflow"
+[Install]
+WantedBy = multi-user.target

@@ -1,0 +1,31 @@
+- name: add package for spark
+  apt:
+    name:
+      - openjdk-8-jdk
+    state: present
+
+- name: add spark installer
+  copy:
+    src: ../files/install-spark.sh
+    dest: /tmp/
+
+- name: Check spark installed
+  stat:
+    path: /usr/local/spark
+  register: spark_check_result
+
+- name: Install spark
+  command: /bin/bash -lc 'bash install-spark.sh'
+  args:
+    chdir: /tmp
+  when: not spark_check_result.stat.exists
+  register: spark_install_result
+
+- name: add bashrc for spark
+  lineinfile:
+    dest: ~/.bashrc
+    line: "{{ item }}"
+  with_items:
+    - "export SPARK_HOME=/usr/local/spark"
+    - 'export PATH="$SPARK_HOME/bin:$PATH"'
+  when: spark_install_result is success

@@ -1,0 +1,42 @@
+- name: Check pyenv installed
+  stat:
+    path: ~/.pyenv
+  register: pyenv_check_result
+
+- name: Install pyenv
+  shell: /bin/bash -lc "curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash"
+  when: not pyenv_check_result.stat.exists
+  register: pyenv_install_result
+
+- name: Check installed python
+  shell: /bin/bash -lc "~/.pyenv/bin/pyenv versions | grep {{ python.version }}"
+  register: pyenv_version
+  ignore_errors: yes
+  changed_when: False
+
+- name: "Install python {{ python.version }}"
+  command: /bin/bash -lc '~/.pyenv/bin/pyenv install {{ python.version }}'
+  when: pyenv_version is failed
+  register: pyenv_python_install_result
+
+- name: add bashrc for pyenv
+  lineinfile:
+    dest: ~/.bashrc
+    line: "{{ item }}"
+  with_items:
+    - 'export PYENV_ROOT="~/.pyenv"'
+    - 'export PATH="$PYENV_ROOT/bin:$PATH"'
+    - 'eval "$(pyenv init -)"'
+  when: pyenv_install_result is success
+
+- name: create venv
+  command: /bin/bash -lc '~/.pyenv/versions/{{ python.version }}/bin/python -m venv ~/.venv'
+  when: pyenv_python_install_result is success
+
+- name: add bashrc for pyenv
+  lineinfile:
+    dest: ~/.bashrc
+    line: "{{ item }}"
+  with_items:
+    - 'export PATH="~/.venv/bin:$PATH"'
+  when: pyenv_python_install_result is success

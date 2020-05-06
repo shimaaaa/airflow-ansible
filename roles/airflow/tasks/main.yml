@@ -1,0 +1,55 @@
+- name: install airflow
+  pip:
+    name: apache-airflow[gcp]
+    virtualenv: ~/.venv
+  register: airflow_install_result
+
+- name: add bashrc for airflow
+  lineinfile:
+    dest: ~/.bashrc
+    line: 'export AIRFLOW_HOME="~/airflow"'
+  when: airflow_install_result is success
+
+- name: create airflow directory
+  file: path=/root/airflow state=directory
+
+- name: copy config
+  copy:
+    src: ../files/airflow.cfg
+    dest: /root/airflow/airflow.cfg
+
+- name: Check airflow installed
+  stat:
+    path: /root/airflow/airflow.db
+  register: airflow_check_result
+
+- name: init airflow
+  shell: bash -lc "/root/.venv/bin/airflow initdb"
+  args:
+    chdir: /root/
+  when: not airflow_check_result.stat.exists
+
+- name: add airflow-scheduler
+  copy:
+    src: ../files/airflow-scheduler.service
+    dest: /etc/systemd/system/
+
+- name: add airflow-web
+  copy:
+    src: ../files/airflow-web.service
+    dest: /etc/systemd/system/
+
+- name: Systemd daemon-reload
+  command: systemctl daemon-reload
+
+- name: restart airflow-scheduler
+  service:
+    name: airflow-scheduler.service
+    state: restarted
+    enabled: true
+
+- name: restart airflow-web
+  service:
+    name: airflow-web.service
+    state: restarted
+    enabled: true

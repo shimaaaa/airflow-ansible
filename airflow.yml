@@ -1,0 +1,8 @@
+- name: airflow
+  hosts: airflow
+  become: yes
+  roles:
+    - package
+    - python
+    - airflow
+    - pyspark
